@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // البيت = هاش الاسم. صاحب البيت هو اللي إيميله الداخلي يطابق الهاش
+    function homeOwner(h) {
+      return request.auth != null && request.auth.token.email == h + "@maqady.app";
+    }
+    function admin() {
+      return request.auth != null && request.auth.token.email == "admin@maqady.app";
+    }
+
+    // بيانات تعريف البيت (الاسم والأقسام): المشرف يقدر يقرأها فقط
+    match /homes/{h} {
+      allow read: if homeOwner(h) || admin();
+      allow create, update: if homeOwner(h);
+      allow delete: if admin();
+    }
+
+    // أغراض البيت: لصاحب البيت فقط، حتى المشرف ما يشوفها
+    match /homes/{h}/items/{i} {
+      allow read, write: if homeOwner(h);
+    }
+  }
+}

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مقاضي البيت</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--tx:#1d2a24;--mut:#6b7a72;--pri:#1f7a5a;--onpri:#fff;--bd:#e3dfd5;--dan:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#141a17;--card:#1e2723;--tx:#eef3f0;--mut:#9aaaa1;--pri:#3fb88b;--onpri:#08140f;--bd:#2f3b35;--dan:#e57365}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Tahoma,Arial,sans-serif;font-size:16px}
+.wrap{max-width:640px;margin:0 auto;padding:16px 14px 100px}
+h1{font-size:24px;margin:6px 0 2px}
+.sub{color:var(--mut);font-size:14px;margin-bottom:12px}
+.top{display:flex;justify-content:space-between;align-items:center}
+.lnk{background:none;border:0;color:var(--mut);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px}
+.chip{flex:none;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:20px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+.chip.on{background:var(--pri);color:var(--onpri);border-color:var(--pri)}
+.item{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px;margin-bottom:10px}
+.item.done{opacity:.5}.item.done .nm{text-decoration:line-through}
+.ph{width:64px;height:64px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:30px;flex:none;overflow:hidden}
+.ph img{width:100%;height:100%;object-fit:cover}
+.mid{flex:1;min-width:0}.nm{font-weight:700;font-size:17px;overflow-wrap:anywhere}
+.cat{color:var(--mut);font-size:12px}
+.qty{display:flex;align-items:center;gap:8px;margin-top:4px}
+.qty button{width:30px;height:30px;border-radius:50%;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:18px;cursor:pointer}
+.side{display:flex;flex-direction:column;gap:6px}
+.ib{width:36px;height:36px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:16px;cursor:pointer}
+.ib.on{background:var(--pri);color:var(--onpri)}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}
+.fab{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:18px;background:var(--pri);color:var(--onpri);border:0;border-radius:28px;padding:14px 22px;font:inherit;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer}
+.clr{display:block;margin:14px auto 0;background:none;border:0;color:var(--dan);font:inherit;cursor:pointer}
+.mod{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.mod.show{display:flex}
+.sheet{background:var(--card);width:100%;max-width:640px;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:92%;overflow-y:auto}
+.sheet h2{margin:0 0 12px;font-size:19px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input,select{width:100%;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit}
+input[type=checkbox]{width:auto}
+.row{display:flex;gap:10px}.row>div{flex:1}
+.pick{display:flex;align-items:center;gap:12px}.pick .ph{width:72px;height:72px}
+.btns{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;padding:13px;border-radius:12px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit;font-weight:700;cursor:pointer}
+.btn.p{background:var(--pri);color:var(--onpri);border-color:var(--pri)}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:18px;margin-top:30px}
+.err{color:var(--dan);font-size:14px;min-height:20px;margin-top:8px}
+.warn{background:var(--bg);border-radius:10px;padding:10px;font-size:13px;color:var(--mut);margin-top:12px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- تسجيل الدخول -->
+<div id="vLogin" class="hide">
+  <h1 style="text-align:center;margin-top:30px">🛒 مقاضي البيت</h1>
+  <div class="box">
+    <div id="nameBox"><label style="margin-top:0">اسم البيت</label><input id="lname" placeholder="مثال: بيت ابو محمد" autocomplete="username"></div>
+    <label>كلمة السر</label><input id="lpass" type="password" autocomplete="current-password">
+    <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="sp"> إظهار كلمة السر</label>
+    <div class="err" id="lerr"></div>
+    <div class="btns"><button class="btn p" id="bin">دخول</button><button class="btn" id="breg">بيت جديد</button></div>
+    <div class="warn">⚠️ ما فيه إيميل ولا جوال، فاحفظ كلمة السر. إذا نسيتها تواصل مع المشرف.</div>
+    <button class="lnk" id="adm" style="margin-top:12px">دخول المشرف</button>
+  </div>
+</div>
+
+<!-- التطبيق -->
+<div id="vApp" class="hide">
+  <div class="top"><h1 id="ttl">🛒 مقاضي البيت</h1><button class="lnk out">خروج</button></div>
+  <div class="sub" id="sum"></div>
+  <div class="chips" id="view"></div><div class="chips" id="chips"></div>
+  <div id="list"></div>
+  <button class="clr hide" id="clr">🔄 تصفير اللي انشرى (ما يتحذف من أغراضك)</button>
+  <button class="fab" id="add">＋ إضافة</button>
+</div>
+
+<!-- المشرف -->
+<div id="vAdmin" class="hide">
+  <div class="top"><h1>👑 المشرف</h1><button class="lnk out">خروج</button></div>
+  <div class="sub">البيوت المسجلة (ما تقدر تشوف محتوى قوائمهم)</div>
+  <div id="homes"></div>
+  <div class="warn">لإعادة تعيين كلمة سر بيت نسيها: افتح Firebase Console ثم Authentication ثم Users، واحذف مستخدم ذلك البيت. بعدها يسجل «بيت جديد» بنفس الاسم وكلمة سر جديدة، وترجع له كل أغراضه تلقائياً.</div>
+</div>
+
+</div>
+
+<!-- نافذة الغرض -->
+<div class="mod" id="mod"><div class="sheet">
+  <h2 id="mt">إضافة غرض</h2>
+  <div class="pick"><div class="ph" id="prev">📷</div><div style="flex:1"><label style="margin-top:0">الصورة (اختياري)</label><input type="file" id="file" accept="image/*"></div></div>
+  <label>الاسم</label><input id="name">
+  <div class="row"><div><label>الكمية المطلوبة الحين</label><input id="q" type="text" inputmode="numeric" value="0"></div><div><label>الوحدة</label><input id="u" placeholder="كيس، علبة"></div></div>
+  <label>السعر (للحبة) - اختياري</label><input id="p" type="text" inputmode="decimal" dir="ltr" placeholder="0.00" style="text-align:right">
+  <label>القسم</label><select id="cs"></select>
+  <button class="btn" id="newcat" style="width:100%;margin-top:8px">＋ قسم جديد</button>
+  <div class="btns"><button class="btn" id="delb" style="color:var(--dan)">حذف</button><button class="btn" id="cancel">إلغاء</button><button class="btn p" id="save">حفظ</button></div>
+</div></div>
+
+<script type="module">
+import {firebaseConfig} from "./firebase-config.js";
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,deleteDoc,collection,onSnapshot,getDocs} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const DEF=[{n:"أكل",i:"🍚"},{n:"مشروبات",i:"🥤"},{n:"خضار وفواكه",i:"🥬"},{n:"منظفات",i:"🧼"},{n:"عناية شخصية",i:"🧴"},{n:"أدوات منزلية",i:"🏠"},{n:"أخرى",i:"📦"}];
+let H=null,cats=DEF,items=[],cur="all",view="all",editId=null,img="",adminMode=false,unsubs=[];
+const esc=t=>{const d=document.createElement("div");d.textContent=t;return d.innerHTML};
+const fm=n=>(Math.round(n*100)/100).toLocaleString("en-US");
+const en=s=>String(s).replace(/[٠-٩]/g,d=>d.charCodeAt(0)-1632).replace(/[۰-۹]/g,d=>d.charCodeAt(0)-1776).replace(/[٫،,]/g,".");
+async function hid(n){n=n.trim().toLowerCase().replace(/\s+/g," ");const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(n));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,40)}
+const show=v=>["vLogin","vApp","vAdmin"].forEach(x=>$(x).classList.toggle("hide",x!==v));
+const icon=n=>(cats.find(c=>c.n===n)||{i:"📦"}).i;
+
+/* ---------- الدخول ---------- */
+$("sp").onchange=e=>{$("lpass").type=e.target.checked?"text":"password"};
+$("adm").onclick=()=>{adminMode=!adminMode;$("nameBox").classList.toggle("hide",adminMode);$("breg").classList.toggle("hide",adminMode);$("adm").textContent=adminMode?"رجوع":"دخول المشرف"};
+function errMsg(e){const c=e.code||"";
+  if(c.includes("email-already"))return"هذا الاسم مستخدم، اختر اسم ثاني";
+  if(c.includes("invalid-credential")||c.includes("wrong-password")||c.includes("user-not-found"))return"الاسم أو كلمة السر غلط";
+  if(c.includes("weak-password"))return"كلمة السر قصيرة (6 أحرف على الأقل)";
+  if(c.includes("too-many"))return"محاولات كثيرة، انتظر شوي";
+  return"صار خطأ: "+c}
+async function emailOf(){if(adminMode)return"admin@maqady.app";const n=$("lname").value;if(!n.trim())throw{code:"الاسم فاضي"};return (await hid(n))+"@maqady.app"}
+$("bin").onclick=async()=>{$("lerr").textContent="";try{await signInWithEmailAndPassword(auth,await emailOf(),$("lpass").value)}catch(e){$("lerr").textContent=errMsg(e)}};
+$("breg").onclick=async()=>{$("lerr").textContent="";try{
+  const em=await emailOf(),h=em.split("@")[0];
+  await createUserWithEmailAndPassword(auth,em,$("lpass").value);
+  const r=doc(db,"homes",h),s=await getDoc(r);
+  if(!s.exists())await setDoc(r,{name:$("lname").value.trim(),createdAt:Date.now(),cats:DEF});
+}catch(e){$("lerr").textContent=errMsg(e)}};
+document.querySelectorAll(".out").forEach(b=>b.onclick=()=>signOut(auth));
+
+onAuthStateChanged(auth,async u=>{
+  unsubs.forEach(f=>f());unsubs=[];items=[];
+  if(!u){show("vLogin");return}
+  if(u.email==="admin@maqady.app"){show("vAdmin");loadHomes();return}
+  H=u.email.split("@")[0];show("vApp");
+  unsubs.push(onSnapshot(doc(db,"homes",H),s=>{const d=s.data()||{};cats=d.cats||DEF;$("ttl").textContent="🛒 "+(d.name||"مقاضي البيت");render()}));
+  unsubs.push(onSnapshot(collection(db,"homes",H,"items"),s=>{items=s.docs.map(d=>({id:d.id,...d.data()}));render()}));
+});
+
+async function loadHomes(){
+  const s=await getDocs(collection(db,"homes"));
+  $("homes").innerHTML=s.docs.map(d=>d.data()).sort((a,b)=>b.createdAt-a.createdAt).map(h=>
+    '<div class="item"><div class="mid"><div class="nm">'+esc(h.name||"؟")+'</div><div class="cat">'+new Date(h.createdAt||0).toLocaleDateString("en-GB")+'</div></div></div>').join("")||'<div class="empty">ما فيه بيوت بعد</div>'}
+
+/* ---------- القائمة ---------- */
+const itemRef=id=>doc(db,"homes",H,"items",id);
+const saveItem=it=>{const {id,...d}=it;return setDoc(itemRef(id),d)};
+const saveCats=()=>setDoc(doc(db,"homes",H),{cats},{merge:true});
+function render(){
+  const v=$("view");v.innerHTML="";
+  [["all","📋 كل الأغراض"],["need","🛒 المطلوب"]].forEach(x=>{const b=document.createElement("button");b.className="chip"+(view===x[0]?" on":"");b.textContent=x[1];b.onclick=()=>{view=x[0];render()};v.appendChild(b)});
+  const c=$("chips");c.innerHTML="";
+  [{n:"all",l:"الكل"},...cats.map(x=>({n:x.n,l:x.i+" "+x.n}))].forEach(x=>{const b=document.createElement("button");b.className="chip"+(cur===x.n?" on":"");b.textContent=x.l;b.onclick=()=>{cur=x.n;render()};c.appendChild(b)});
+  const its=items.filter(i=>(cur==="all"||i.cat===cur)&&(view==="all"||i.q>0)).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
+  const need=items.filter(i=>i.q>0),left=need.filter(i=>!i.done).length,tot=need.reduce((s,i)=>s+(i.p||0)*i.q,0);
+  $("sum").textContent=items.length?"المطلوب: "+need.length+" • باقي تشتريه: "+left+(tot?" • الإجمالي: "+fm(tot):""):"أضف أغراضك مرة وحدة وتبقى محفوظة";
+  $("clr").classList.toggle("hide",!items.some(i=>i.done));
+  $("list").innerHTML=its.length?its.map(i=>
+    '<div class="item'+(i.done&&i.q>0?" done":"")+'"><div class="ph">'+(i.img?'<img src="'+i.img+'" alt="">':icon(i.cat))+'</div><div class="mid"><div class="nm">'+esc(i.name)+'</div><div class="cat">'+esc(i.cat)+'</div>'
+    +(i.p?'<div class="cat"><span dir="ltr">'+fm(i.p)+(i.q>1?' × '+i.q+' = '+fm(i.p*i.q):'')+'</span></div>':'')
+    +(i.q>0?'<div class="qty"><button data-a="plus" data-id="'+i.id+'">＋</button><b>'+i.q+'</b> <span class="cat">'+esc(i.u||"")+'</span><button data-a="minus" data-id="'+i.id+'">－</button></div>':'<div class="qty"><button class="chip" style="width:auto;height:auto;border-radius:20px;padding:6px 12px;font-size:14px" data-a="plus" data-id="'+i.id+'">＋ أضف للقائمة</button></div>')+'</div>'
+    +'<div class="side">'+(i.q>0?'<button class="ib'+(i.done?" on":"")+'" data-a="done" data-id="'+i.id+'">✓</button>':'')+'<button class="ib" data-a="edit" data-id="'+i.id+'">✎</button></div></div>').join("")
+    :'<div class="empty">'+(view==="need"?"ما حددت شي للشراء.<br>روح «كل الأغراض» واضغط ＋ على اللي تبيه":"ما فيه أغراض هنا.<br>اضغط «إضافة» وابدأ تبني أغراضك")+'</div>'}
+$("list").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+  const it=items.find(x=>x.id===b.dataset.id),a=b.dataset.a;if(!it)return;
+  if(a==="edit")return openM(it);
+  if(a==="plus")it.q++;else if(a==="minus"){if(it.q>0)it.q--;if(!it.q)it.done=false}else if(a==="done")it.done=!it.done;
+  saveItem(it)};
+$("clr").onclick=()=>items.filter(i=>i.done).forEach(i=>saveItem({...i,q:0,done:false}));
+
+/* ---------- نافذة الغرض ---------- */
+function fillCats(sel){$("cs").innerHTML=cats.map(c=>"<option>"+esc(c.n)+"</option>").join("");if(sel)$("cs").value=sel}
+function openM(it){editId=it?it.id:null;img=it?it.img||"":"";
+  $("mt").textContent=it?"تعديل الغرض":"إضافة غرض";fillCats(it?it.cat:(cur!=="all"?cur:null));
+  $("name").value=it?it.name:"";$("q").value=it?it.q:0;$("u").value=it?it.u||"":"";$("p").value=it&&it.p?it.p:"";$("file").value="";
+  $("delb").style.display=it?"block":"none";setPrev();$("mod").classList.add("show")}
+const setPrev=()=>{$("prev").innerHTML=img?'<img src="'+img+'" alt="">':"📷"};
+$("add").onclick=()=>openM(null);
+$("cancel").onclick=()=>$("mod").classList.remove("show");
+$("mod").onclick=e=>{if(e.target===$("mod"))$("mod").classList.remove("show")};
+$("newcat").onclick=()=>{const n=(prompt("اسم القسم الجديد؟")||"").trim();if(!n)return;const ic=prompt("إيموجي للقسم (اختياري)","🛍️")||"🛍️";
+  if(!cats.some(c=>c.n===n))cats=[...cats,{n,i:ic}];saveCats();fillCats(n)};
+$("file").onchange=function(){const f=this.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,240/Math.max(im.width,im.height)),cv=document.createElement("canvas");
+    cv.width=Math.round(im.width*s);cv.height=Math.round(im.height*s);cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+    img=cv.toDataURL("image/jpeg",0.6);setPrev()};im.src=rd.result};rd.readAsDataURL(f)};
+$("save").onclick=async()=>{const n=$("name").value.trim();if(!n){$("name").focus();return}
+  const q=Math.max(0,parseInt(en($("q").value))||0),p=Math.max(0,parseFloat(en($("p").value))||0);
+  const old=items.find(x=>x.id===editId)||{};
+  await saveItem({id:editId||String(Date.now()),name:n,q,p,u:$("u").value.trim(),cat:$("cs").value,img,done:q?!!old.done:false});
+  $("mod").classList.remove("show")};
+$("delb").onclick=async()=>{const it=items.find(x=>x.id===editId);if(!it||!confirm("تحذف «"+it.name+"» نهائياً من أغراضك؟"))return;
+  await deleteDoc(itemRef(editId));$("mod").classList.remove("show")};
+</script>
+</body>
+</html>
