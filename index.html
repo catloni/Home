@@ -72,7 +72,7 @@ input[type=checkbox]{width:auto}
   <div class="sub" id="sum"></div>
   <div class="chips" id="view"></div><div class="chips" id="chips"></div>
   <div id="list"></div>
-  <button class="clr hide" id="clr">🔄 تصفير اللي انشرى (ما يتحذف من أغراضك)</button>
+  <button class="clr hide" id="clr">🔄 تصفير اللي انشرى (ينحفظ في سجل المشتريات)</button>
   <button class="fab" id="add">＋ إضافة</button>
 </div>
 
@@ -102,12 +102,12 @@ input[type=checkbox]{width:auto}
 import {firebaseConfig} from "./firebase-config.js";
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {getFirestore,doc,getDoc,setDoc,deleteDoc,collection,onSnapshot,getDocs} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getFirestore,doc,getDoc,setDoc,deleteDoc,collection,onSnapshot,getDocs,arrayUnion} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
 const DEF=[{n:"أكل",i:"🍚"},{n:"مشروبات",i:"🥤"},{n:"خضار وفواكه",i:"🥬"},{n:"منظفات",i:"🧼"},{n:"عناية شخصية",i:"🧴"},{n:"أدوات منزلية",i:"🏠"},{n:"أخرى",i:"📦"}];
-let H=null,cats=DEF,items=[],cur="all",view="all",editId=null,img="",adminMode=false,unsubs=[];
+let H=null,cats=DEF,items=[],hist=[],cur="all",view="all",editId=null,img="",adminMode=false,unsubs=[];
 const esc=t=>{const d=document.createElement("div");d.textContent=t;return d.innerHTML};
 const fm=n=>(Math.round(n*100)/100).toLocaleString("en-US");
 const en=s=>String(s).replace(/[٠-٩]/g,d=>d.charCodeAt(0)-1632).replace(/[۰-۹]/g,d=>d.charCodeAt(0)-1776).replace(/[٫،,]/g,".");
@@ -135,11 +135,11 @@ $("breg").onclick=async()=>{$("lerr").textContent="";try{
 document.querySelectorAll(".out").forEach(b=>b.onclick=()=>signOut(auth));
 
 onAuthStateChanged(auth,async u=>{
-  unsubs.forEach(f=>f());unsubs=[];items=[];
+  unsubs.forEach(f=>f());unsubs=[];items=[];hist=[];
   if(!u){show("vLogin");return}
   if(u.email==="admin@maqady.app"){show("vAdmin");loadHomes();return}
   H=u.email.split("@")[0];show("vApp");
-  unsubs.push(onSnapshot(doc(db,"homes",H),s=>{const d=s.data()||{};cats=d.cats||DEF;$("ttl").textContent="🛒 "+(d.name||"مقاضي البيت");render()}));
+  unsubs.push(onSnapshot(doc(db,"homes",H),s=>{const d=s.data()||{};cats=d.cats||DEF;hist=d.history||[];$("ttl").textContent="🛒 "+(d.name||"مقاضي البيت");render()}));
   unsubs.push(onSnapshot(collection(db,"homes",H,"items"),s=>{items=s.docs.map(d=>({id:d.id,...d.data()}));render()}));
 });
 
@@ -154,8 +154,9 @@ const saveItem=it=>{const {id,...d}=it;return setDoc(itemRef(id),d)};
 const saveCats=()=>setDoc(doc(db,"homes",H),{cats},{merge:true});
 function render(){
   const v=$("view");v.innerHTML="";
-  [["all","📋 كل الأغراض"],["need","🛒 المطلوب"]].forEach(x=>{const b=document.createElement("button");b.className="chip"+(view===x[0]?" on":"");b.textContent=x[1];b.onclick=()=>{view=x[0];render()};v.appendChild(b)});
+  [["all","📋 كل الأغراض"],["need","🛒 المطلوب"],["hist","🧾 سجل المشتريات"]].forEach(x=>{const b=document.createElement("button");b.className="chip"+(view===x[0]?" on":"");b.textContent=x[1];b.onclick=()=>{view=x[0];render()};v.appendChild(b)});
   const c=$("chips");c.innerHTML="";
+  if(view==="hist")return renderHist();
   [{n:"all",l:"الكل"},...cats.map(x=>({n:x.n,l:x.i+" "+x.n}))].forEach(x=>{const b=document.createElement("button");b.className="chip"+(cur===x.n?" on":"");b.textContent=x.l;b.onclick=()=>{cur=x.n;render()};c.appendChild(b)});
   const its=items.filter(i=>(cur==="all"||i.cat===cur)&&(view==="all"||i.q>0)).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
   const need=items.filter(i=>i.q>0),left=need.filter(i=>!i.done).length,tot=need.reduce((s,i)=>s+(i.p||0)*i.q,0);
@@ -167,12 +168,35 @@ function render(){
     +(i.q>0?'<div class="qty"><button data-a="plus" data-id="'+i.id+'">＋</button><b>'+i.q+'</b> <span class="cat">'+esc(i.u||"")+'</span><button data-a="minus" data-id="'+i.id+'">－</button></div>':'<div class="qty"><button class="chip" style="width:auto;height:auto;border-radius:20px;padding:6px 12px;font-size:14px" data-a="plus" data-id="'+i.id+'">＋ أضف للقائمة</button></div>')+'</div>'
     +'<div class="side">'+(i.q>0?'<button class="ib'+(i.done?" on":"")+'" data-a="done" data-id="'+i.id+'">✓</button>':'')+'<button class="ib" data-a="edit" data-id="'+i.id+'">✎</button></div></div>').join("")
     :'<div class="empty">'+(view==="need"?"ما حددت شي للشراء.<br>روح «كل الأغراض» واضغط ＋ على اللي تبيه":"ما فيه أغراض هنا.<br>اضغط «إضافة» وابدأ تبني أغراضك")+'</div>'}
+function renderHist(){
+  const h=hist.slice().sort((a,b)=>(b.at||0)-(a.at||0));
+  const tot=h.reduce((s,x)=>s+(x.p||0)*x.q,0);
+  $("sum").textContent=h.length?"🧾 سجل المشتريات: "+h.length+" غرض • الإجمالي: "+fm(tot):"🧾 سجل المشتريات";
+  $("clr").classList.add("hide");
+  if(!h.length){$("list").innerHTML='<div class="empty">ما فيه مشتريات مسجلة بعد.<br>أول ما تضغط «تصفير اللي انشرى» بتنحفظ هنا وما تنمسح</div>';return}
+  const g=new Map();
+  h.forEach(x=>{const k=new Date(x.at||0).toLocaleDateString("en-GB");if(!g.has(k))g.set(k,[]);g.get(k).push(x)});
+  let out="";
+  g.forEach((arr,k)=>{
+    const gt=arr.reduce((s,x)=>s+(x.p||0)*x.q,0);
+    out+='<div class="cat" style="margin:14px 2px 6px;font-weight:700">📅 '+k+(gt?" • "+fm(gt):"")+'</div>';
+    out+=arr.map(x=>'<div class="item"><div class="ph">'+icon(x.cat)+'</div><div class="mid"><div class="nm">'+esc(x.name)+'</div><div class="cat">'+esc(x.cat||"")+'</div>'
+      +(x.p?'<div class="cat"><span dir="ltr">'+fm(x.p)+(x.q>1?" × "+x.q+" = "+fm(x.p*x.q):"")+'</span></div>':"")+'</div>'
+      +'<div class="side"><span class="cat">'+new Date(x.at||0).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})+'</span><b>'+x.q+(x.u?" "+esc(x.u):"")+'</b></div></div>').join("");
+  });
+  $("list").innerHTML=out;
+}
 $("list").onclick=e=>{const b=e.target.closest("button");if(!b)return;
   const it=items.find(x=>x.id===b.dataset.id),a=b.dataset.a;if(!it)return;
   if(a==="edit")return openM(it);
   if(a==="plus")it.q++;else if(a==="minus"){if(it.q>0)it.q--;if(!it.q)it.done=false}else if(a==="done")it.done=!it.done;
   saveItem(it)};
-$("clr").onclick=()=>items.filter(i=>i.done).forEach(i=>saveItem({...i,q:0,done:false}));
+$("clr").onclick=async()=>{
+  const bought=items.filter(i=>i.done&&i.q>0);if(!bought.length)return;
+  const at=Date.now();
+  try{await setDoc(doc(db,"homes",H),{history:arrayUnion(...bought.map(i=>({name:i.name,cat:i.cat||"",q:i.q,p:i.p||0,u:i.u||"",at})) )},{merge:true})}
+  catch(e){alert("ما قدرنا نحفظ في السجل: "+(e.code||e.message));return}
+  await Promise.all(bought.map(i=>saveItem({...i,q:0,done:false})));};
 
 /* ---------- نافذة الغرض ---------- */
 function fillCats(sel){$("cs").innerHTML=cats.map(c=>"<option>"+esc(c.n)+"</option>").join("");if(sel)$("cs").value=sel}
