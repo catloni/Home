@@ -36,6 +36,7 @@ h1{font-size:24px;margin:6px 0 2px}
 .pur .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-bottom:6px}
 .pur .ln{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:15px}
 .pur .ln+.ln{border-top:1px dashed var(--bd)}
+.pur .ln.tot{border-top:1px solid var(--bd);margin-top:4px;padding-top:9px;font-size:16px}.pur .ln.tot b{color:var(--pri)}
 .mod{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}
 .mod.show{display:flex}
 .sheet{background:var(--card);width:100%;max-width:640px;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:92%;overflow-y:auto}
@@ -184,8 +185,9 @@ function renderHist(){
   $("list").innerHTML=ops.map((o,n)=>{
     const d=new Date(o.at);
     const dt=d.toLocaleDateString("en-GB")+" • "+d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
-    return '<div class="pur"><div class="hd"><div><b>عملية شراء '+(ops.length-n)+'</b><div class="cat">'+dt+' • '+o.items.length+' غرض'+(o.total?' • الإجمالي '+fm(o.total):'')+'</div></div></div>'
+    return '<div class="pur"><div class="hd"><div><b>عملية شراء '+(ops.length-n)+'</b><div class="cat">'+dt+' • '+o.items.length+' غرض</div></div></div>'
       +o.items.map(x=>'<div class="ln"><span>'+icon(x.cat)+" "+esc(x.name)+'</span><span style="white-space:nowrap">'+x.q+(x.u?" "+esc(x.u):"")+(x.p?" • "+fm((x.p||0)*(x.q||0)):"")+'</span></div>').join("")
+      +'<div class="ln tot"><span>إجمالي العملية</span><b>'+fm(o.total)+'</b></div>'
       +'</div>';
   }).join("");
 }
