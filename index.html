@@ -30,7 +30,12 @@ h1{font-size:24px;margin:6px 0 2px}
 .ib.on{background:var(--pri);color:var(--onpri)}
 .empty{text-align:center;color:var(--mut);padding:40px 10px}
 .fab{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:18px;background:var(--pri);color:var(--onpri);border:0;border-radius:28px;padding:14px 22px;font:inherit;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer}
-.clr{display:block;margin:14px auto 0;background:none;border:0;color:var(--dan);font:inherit;cursor:pointer}
+.paybar{margin:4px 0 18px}
+.paybar .btn{width:100%;padding:15px;font-size:17px}
+.pur{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:12px 14px;margin-bottom:12px}
+.pur .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-bottom:6px}
+.pur .ln{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:15px}
+.pur .ln+.ln{border-top:1px dashed var(--bd)}
 .mod{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}
 .mod.show{display:flex}
 .sheet{background:var(--card);width:100%;max-width:640px;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:92%;overflow-y:auto}
@@ -72,7 +77,7 @@ input[type=checkbox]{width:auto}
   <div class="sub" id="sum"></div>
   <div class="chips" id="view"></div><div class="chips" id="chips"></div>
   <div id="list"></div>
-  <button class="clr hide" id="clr">🔄 تصفير اللي انشرى (ينحفظ في سجل المشتريات)</button>
+  <div class="paybar hide" id="paybar"><button class="btn p" id="pay">✅ تم الشراء</button></div>
   <button class="fab" id="add">＋ إضافة</button>
 </div>
 
@@ -161,7 +166,7 @@ function render(){
   const its=items.filter(i=>(cur==="all"||i.cat===cur)&&(view==="all"||i.q>0)).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
   const need=items.filter(i=>i.q>0),left=need.filter(i=>!i.done).length,tot=need.reduce((s,i)=>s+(i.p||0)*i.q,0);
   $("sum").textContent=items.length?"المطلوب: "+need.length+" • باقي تشتريه: "+left+(tot?" • الإجمالي: "+fm(tot):""):"أضف أغراضك مرة وحدة وتبقى محفوظة";
-  $("clr").classList.toggle("hide",!items.some(i=>i.done));
+  $("paybar").classList.toggle("hide",!need.length);
   $("list").innerHTML=its.length?its.map(i=>
     '<div class="item'+(i.done&&i.q>0?" done":"")+'"><div class="ph">'+(i.img?'<img src="'+i.img+'" alt="">':icon(i.cat))+'</div><div class="mid"><div class="nm">'+esc(i.name)+'</div><div class="cat">'+esc(i.cat)+'</div>'
     +(i.p?'<div class="cat"><span dir="ltr">'+fm(i.p)+(i.q>1?' × '+i.q+' = '+fm(i.p*i.q):'')+'</span></div>':'')
@@ -170,33 +175,34 @@ function render(){
     :'<div class="empty">'+(view==="need"?"ما حددت شي للشراء.<br>روح «كل الأغراض» واضغط ＋ على اللي تبيه":"ما فيه أغراض هنا.<br>اضغط «إضافة» وابدأ تبني أغراضك")+'</div>'}
 function renderHist(){
   const h=hist.slice().sort((a,b)=>(b.at||0)-(a.at||0));
-  const tot=h.reduce((s,x)=>s+(x.p||0)*x.q,0);
-  $("sum").textContent=h.length?"🧾 سجل المشتريات: "+h.length+" غرض • الإجمالي: "+fm(tot):"🧾 سجل المشتريات";
-  $("clr").classList.add("hide");
-  if(!h.length){$("list").innerHTML='<div class="empty">ما فيه مشتريات مسجلة بعد.<br>أول ما تضغط «تصفير اللي انشرى» بتنحفظ هنا وما تنمسح</div>';return}
   const g=new Map();
-  h.forEach(x=>{const k=new Date(x.at||0).toLocaleDateString("en-GB");if(!g.has(k))g.set(k,[]);g.get(k).push(x)});
-  let out="";
-  g.forEach((arr,k)=>{
-    const gt=arr.reduce((s,x)=>s+(x.p||0)*x.q,0);
-    out+='<div class="cat" style="margin:14px 2px 6px;font-weight:700">📅 '+k+(gt?" • "+fm(gt):"")+'</div>';
-    out+=arr.map(x=>'<div class="item"><div class="ph">'+icon(x.cat)+'</div><div class="mid"><div class="nm">'+esc(x.name)+'</div><div class="cat">'+esc(x.cat||"")+'</div>'
-      +(x.p?'<div class="cat"><span dir="ltr">'+fm(x.p)+(x.q>1?" × "+x.q+" = "+fm(x.p*x.q):"")+'</span></div>':"")+'</div>'
-      +'<div class="side"><span class="cat">'+new Date(x.at||0).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})+'</span><b>'+x.q+(x.u?" "+esc(x.u):"")+'</b></div></div>').join("");
-  });
-  $("list").innerHTML=out;
+  h.forEach(x=>{const k=String(x.pid||x.at||0);if(!g.has(k))g.set(k,[]);g.get(k).push(x)});
+  const ops=[...g.values()].map(arr=>({at:arr[0].at||0,items:arr,total:arr.reduce((s,x)=>s+(x.p||0)*(x.q||0),0)})).sort((a,b)=>b.at-a.at);
+  $("sum").textContent=ops.length?"🧾 سجل المشتريات: "+ops.length+" عملية شراء":"🧾 سجل المشتريات";
+  $("paybar").classList.add("hide");
+  if(!ops.length){$("list").innerHTML='<div class="empty">ما فيه مشتريات مسجلة بعد.<br>أول ما تخلص شراء اضغط «✅ تم الشراء» وتنحفظ هنا</div>';return}
+  $("list").innerHTML=ops.map((o,n)=>{
+    const d=new Date(o.at);
+    const dt=d.toLocaleDateString("en-GB")+" • "+d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+    return '<div class="pur"><div class="hd"><div><b>عملية شراء '+(ops.length-n)+'</b><div class="cat">'+dt+' • '+o.items.length+' غرض'+(o.total?' • الإجمالي '+fm(o.total):'')+'</div></div></div>'
+      +o.items.map(x=>'<div class="ln"><span>'+icon(x.cat)+" "+esc(x.name)+'</span><span style="white-space:nowrap">'+x.q+(x.u?" "+esc(x.u):"")+(x.p?" • "+fm((x.p||0)*(x.q||0)):"")+'</span></div>').join("")
+      +'</div>';
+  }).join("");
 }
 $("list").onclick=e=>{const b=e.target.closest("button");if(!b)return;
   const it=items.find(x=>x.id===b.dataset.id),a=b.dataset.a;if(!it)return;
   if(a==="edit")return openM(it);
   if(a==="plus")it.q++;else if(a==="minus"){if(it.q>0)it.q--;if(!it.q)it.done=false}else if(a==="done")it.done=!it.done;
   saveItem(it)};
-$("clr").onclick=async()=>{
-  const bought=items.filter(i=>i.done&&i.q>0);if(!bought.length)return;
-  const at=Date.now();
-  try{await setDoc(doc(db,"homes",H),{history:arrayUnion(...bought.map(i=>({name:i.name,cat:i.cat||"",q:i.q,p:i.p||0,u:i.u||"",at})) )},{merge:true})}
+$("pay").onclick=async()=>{
+  const list=items.filter(i=>i.q>0);if(!list.length)return;
+  const tot=list.reduce((s,i)=>s+(i.p||0)*i.q,0);
+  if(!confirm("تسجل عملية شراء فيها "+list.length+" غرض"+(tot?" بإجمالي "+fm(tot):"")+"؟\nبتنحفظ في سجل المشتريات وتصفّر من المطلوب."))return;
+  const at=Date.now(),pid=String(at);
+  try{await setDoc(doc(db,"homes",H),{history:arrayUnion(...list.map(i=>({pid,name:i.name,cat:i.cat||"",q:i.q,p:i.p||0,u:i.u||"",at})) )},{merge:true})}
   catch(e){alert("ما قدرنا نحفظ في السجل: "+(e.code||e.message));return}
-  await Promise.all(bought.map(i=>saveItem({...i,q:0,done:false})));};
+  await Promise.all(list.map(i=>saveItem({...i,q:0,done:false})));
+  view="hist";render();};
 
 /* ---------- نافذة الغرض ---------- */
 function fillCats(sel){$("cs").innerHTML=cats.map(c=>"<option>"+esc(c.n)+"</option>").join("");if(sel)$("cs").value=sel}
